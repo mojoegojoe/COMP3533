@@ -27,7 +27,7 @@ public class TCPClient {
 
 			modifiedSentence = inFromServer.readLine();
 
-			System.out.println("FROM SERVER: " + modifiedSentence);
+			System.out.printf("The following words start with %s: %s%n",sentence, modifiedSentence);
 			sentence = inFromUser.readLine();
 		}
 

@@ -8,9 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Collections;
 
 
 public class TCPServer {
+
+
 	static ArrayList<String> searchSrc(String searchWord) throws Exception{
 		File srcFile = new File("words.txt");
 		String currentWord;
@@ -21,20 +24,25 @@ public class TCPServer {
 				Scanner src = new Scanner(srcFile);
 				try{
 					while(src.hasNext()){
-						currentWord = src.nextLine().toUpperCase();
+						String current= src.nextLine();
+						currentWord = current.toUpperCase();
 						searchWord = searchWord.toUpperCase();
-						for(i = 0; i < currentWord.length(); i++){
-							//System.out.println("currentWord char: " + currentWord.charAt(i));
-							//System.out.println("searchWord char: " + searchWord.charAt(i));
-							if(currentWord.charAt(i) != searchWord.charAt(i)){
-							//	System.out.println("currentWord: " + currentWord);
-							//	System.out.println("searchWord: " + searchWord + "\n No longer share chars.\n");
-								i = currentWord.length();
-							}
-							else{
-								commonArr.add(currentWord);
-							}
-						}
+						if (isMatchingSearchTerm(searchWord,currentWord)) {
+							commonArr.add(current);
+						} 
+						// for(i = 0; i < currentWord.length() - 1; i++){
+						// 	System.out.println("currentWord char: " + currentWord.charAt(i));
+						// 	System.out.println("searchWord char: " + searchWord.charAt(i));
+						// 	if(currentWord.charAt(i) != searchWord.charAt(i)){
+						// 		System.out.println("currentWord: " + currentWord);
+						// 		System.out.println("searchWord: " + searchWord + "\n No longer share chars.\n");
+						// 		i = currentWord.length();
+						// 	}
+						// 	else{
+						// 		if (i == searchWord.length() -1)
+						// 		commonArr.add(currentWord);
+						// 	}
+						// }
 					}
 				}
 				catch(Exception e){
@@ -48,6 +56,17 @@ public class TCPServer {
 		}
 		return commonArr;
 	} 
+	static Boolean isMatchingSearchTerm(String search, String currentWord) {
+		int searchLength = search.length();
+		int currentLength = currentWord.length();
+		if (currentLength < searchLength) {
+			return false;
+		}
+		String subSearch = search.substring(0,searchLength - 1);
+		String subCurrent = currentWord.substring(0,searchLength - 1);
+		return subCurrent.equals(subSearch);
+	}
+
 	public static void main(String argv[]) throws Exception {
 		String clientSentence, lowerizerSentence, capitalizedSentence;
 		ArrayList<String> wordCollection; 
@@ -56,6 +75,7 @@ public class TCPServer {
 		while (true) {
 
 			Socket connectionSocket = welcomeSocket.accept();
+			connectionSocket.setTcpNoDelay(true);
 			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
 			DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
 			System.out.println("Accepted TCP connection from" 
@@ -67,9 +87,12 @@ public class TCPServer {
 					lowerizerSentence = clientSentence.toLowerCase() + '\n';
 					capitalizedSentence = clientSentence.toUpperCase() + '\n';
 					wordCollection = searchSrc(lowerizerSentence);
-					System.out.print(wordCollection);
+					Collections.sort(wordCollection, String.CASE_INSENSITIVE_ORDER);
+					System.out.print(wordCollection.toString());
+				
 					//searchSrc(capitalizedSentence);
-					outToClient.writeBytes(capitalizedSentence);
+					outToClient.writeBytes(wordCollection.toString().replace("[","").replace("]","") + "\n");
+					outToClient.flush();
 				}
 			} catch (Exception e) {
 				// TODO: handle exception, if client closed connection, print:
